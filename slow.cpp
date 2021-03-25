@@ -77,10 +77,6 @@ int main()
 
                 int N = 0;
 
-                double po = sqrt(pow(x0 - 1.f/4, 2)+ pow(y0,2));
-                double poc = 1.f/2 - 1.f/2 * cos(atan2(y0, x0 - 1.f / 4));
-                if (po <= poc) N = nMax;
-
                 for (; N < nMax; N++)
                 {
                     double x2 = X * X,

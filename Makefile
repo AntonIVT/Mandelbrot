@@ -9,6 +9,9 @@ fast:
 	g++ -o fast fast.cpp -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -O3
 	./fast
 
-fast_float:
-	g++ -o fast_float fast_float.cpp -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -O3
-	./fast_float
+fast_cpp:
+	g++ -o fast_cpp fast_cpp.cpp -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -O3
+	
+fast_cpp_san:
+	g++ -o fast_cpp fast_cpp.cpp -fsanitize=address -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -O3
+	./fast_cpp
