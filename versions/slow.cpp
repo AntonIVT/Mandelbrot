@@ -6,11 +6,8 @@
 
 int main()
 {
-   const double ROI_X = -1.325f,
-                ROI_Y = 0;
-
-    const int window_width  = 16 * 30,
-                 window_height = 9  * 30;
+    const int    window_width  = 16 * 50,
+                 window_height = 9  * 50;
 
     const size_t screen_width  = 1920,
                  screen_height = 1080;
@@ -24,39 +21,32 @@ int main()
 
     sf::Uint32 screen[window_height][window_width];
 
-    const int nMax = 1024;
+    const int nMax = 250;
     
-    double dx = 1.6f / window_width, 
-           dy = 0.9f / window_height, // rectangle 1.6x0.9 
+    double graph_dot = 1.6f / window_width, 
            rMax2 = 10.f;
 
     double x_offset = 0,
            y_offset = 0;
 
-    int colwidth  = (double)nMax / 36;
-    int coloffset = (double)nMax / 7.5;
+    int colwidth  = 27;
+    int coloffset = 81;
 
     sf::Clock clock;
     while(window.isOpen())
     {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            x_offset -= dx * 10.f;
+            x_offset -= graph_dot * 10.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            x_offset += dx * 10.f;
+            x_offset += graph_dot * 10.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            y_offset -= dy * 10.f;
+            y_offset -= graph_dot * 10.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            y_offset += dy * 10.f;
+            y_offset += graph_dot * 10.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
-        {
-            dx *= 1.1f;
-            dy *= 1.1f;
-        }
+            graph_dot *= 1.1f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-        {
-            dx /= 1.1f;
-            dy /= 1.1f;
-        }
+            graph_dot /= 1.1f;
 
         sf::Event event;
         while(window.pollEvent(event))
@@ -67,10 +57,10 @@ int main()
 
         for (int y_window = 0; y_window < window_height; y_window++)
         {
-            double x0 = (-window_width / 2) * dx + ROI_X + x_offset,
-                   y0 = (y_window - window_height / 2) * dy + ROI_Y + y_offset;
+            double x0 = (-window_width / 2) * graph_dot + x_offset,
+                   y0 = (y_window - window_height / 2) * graph_dot + y_offset;
 
-            for (int x_window = 0; x_window < window_width; x_window++, x0 += dx)
+            for (int x_window = 0; x_window < window_width; x_window++, x0 += graph_dot)
             {
                 double X = x0,
                        Y = y0;
