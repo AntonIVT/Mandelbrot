@@ -151,10 +151,10 @@ int load_config(config cfg, double x_offset, double y_offset, double graph_dot)
                                         "COLOR_WIDTH:    %i\n"
                                         "COLOR_OFFSET:   %i\n"
                                         "MAX_ITERATIONS: %i\n"
-                                        "MAX_RADIUS^2:   %lg\n"
-                                        "OFFSET_X:       %lg\n"
-                                        "OFFSET_Y:       %lg\n"
-                                        "SCALE:          %lg\n", 
+                                        "MAX_RADIUS^2:   %20.16lg\n"
+                                        "OFFSET_X:       %20.16lg\n"
+                                        "OFFSET_Y:       %20.16lg\n"
+                                        "SCALE:          %20.16lg\n", 
                                         cfg.window_width, 
                                         cfg.window_height, 
                                         cfg.color_width,

@@ -1,6 +1,6 @@
 #include <cmath>
 #include <cassert>
-#include "src/vector_avx.hpp"
+#include "src/avx.hpp"
 #include "src/config.hpp"
 #include "src/fps_control.hpp"
 
@@ -52,6 +52,7 @@ inline _vector_ll get_n(_vector_d x0, _vector_d y0, int n_max, _vector_d r_max2)
 
         _vector_d cmp = get_cmp<_CMP_LT_OQ>(r2, r_max2); // r2[i] < r_max2[i]
         int mask = get_mask(cmp);
+        
         if (!mask)
             break;
 
@@ -66,24 +67,6 @@ inline _vector_ll get_n(_vector_d x0, _vector_d y0, int n_max, _vector_d r_max2)
 }
 //===================================================================================
 
-inline bool is_kard(double x, double y, double graph_dot)
-{
-    double po   = 0;
-    double poc  = 0;
-    bool   flag = true;
-
-    for (int i = 0; i < 4; i++)
-    {
-        po = sqrt(pow(graph_dot*i + x -1./4, 2) + pow(y, 2));
-        poc = 1./2 - 1./2*cos(atan2(y, graph_dot * i + x - 1./4));
-
-        if (po > poc)
-            flag = false;
-    }
-    return flag;
-}
-//===================================================================================
-
 inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
                         _vector_d zero_to_three, int n_max, _vector_d r_max2, config cfg)
 {
@@ -94,13 +77,6 @@ inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width,
 
         for (int x_window = 0; x_window < window_width; x_window += 4, x0 += 4 * graph_dot)
         {
-            if (is_kard(x0, y0, graph_dot))
-            {
-                for (int i = 0; i < 4; i++)
-                    screen[y_window * window_width + x_window + i] = __builtin_bswap32(sf::Color::Black.toInteger());
-                continue;
-            }
-
             _vector_ll n = get_n(x0 + graph_dot * zero_to_three, y0, n_max, r_max2);
 
             for (int i = 0; i < 4; i++)
@@ -122,10 +98,9 @@ int video_mod(config cfg)
     sf::Font font;
     assert(font.loadFromFile("src/arial.ttf"));
     get_fps_control(&fps);
-    fps.text_fps.setFont(font);
+    fps.text.setFont(font);
 
-    sf::Time when_load_pressed;
-    bool is_load_pressed = false;
+    bool is_load = false;
 
     int window_width  = cfg.window_width,
         window_height = cfg.window_height;
@@ -151,61 +126,53 @@ int video_mod(config cfg)
     _vector_d zero_to_three(0., 1., 2., 3.);
 
     sf::Clock fps_clock;
-    sf::Clock key_clock;
+
+    bool isF = false;
+    bool isL = false;
 
     while (window.isOpen())
     {
         //------------------------------------------------------
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            x_offset -= graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            x_offset += graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            y_offset -= graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            y_offset += graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt)) // Zoom-
-            graph_dot *= 1.1;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))    // Zoom+
-            graph_dot /= 1.1;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
-        {
-            free(screen);
-            return 0;
-        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))     
+            break;
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))  x_offset  -= graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) x_offset  += graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))    y_offset  -= graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))  y_offset  += graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))  graph_dot *= 1.1;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))     graph_dot /= 1.1;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
         {
-            fps.when_fps_pressed = key_clock.getElapsedTime();
-            if (fps.when_fps_pressed.asSeconds() > 0.05 && fps.when_fps_pressed.asSeconds() < 0.25)
-                fps.is_fps_pressed = true;
+            if (!isF)
+                fps.pressed = true; // is_pressed
+            isF = true;
         }
+        else isF = false;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::L))
         {
-            when_load_pressed = key_clock.getElapsedTime();
-            if (when_load_pressed.asSeconds() > 0.05 && when_load_pressed.asSeconds() < 0.25)
-                is_load_pressed = true;
+            if (!isL)
+                is_load = true;
+            isL = true;
         }
+        else isL = false;
         //------------------------------------------------------
-    
-        sf::Time one_sec = key_clock.getElapsedTime();
-        if (one_sec.asSeconds() >= 0.3)
+
+        if (!isF && fps.pressed)
         {
-            if (fps.is_fps_pressed)
-            {
-                fps.is_fps_show = !fps.is_fps_show;
-                fps.is_fps_pressed = false;
-            }
+            fps.show = !fps.show;
+            fps.pressed = false;
+        }
 
-            if (is_load_pressed)
-            {
-                is_load_pressed = false;
-                if (load_config(cfg, x_offset, y_offset, graph_dot) == 0)
-                    printf("SUCCESSFUL LOAD\n");
-                else
-                    printf("UNSUCCESSFUL LOAD\n");
-            }
-
-            key_clock.restart();
+        if (!isL && is_load)
+        {
+            is_load = false;
+            if (load_config(cfg, x_offset, y_offset, graph_dot) == 0)
+                printf("SUCCESSFUL LOAD\n");
+            else
+                printf("UNSUCCESSFUL LOAD\n");
         }
         //------------------------------------------------------
 
@@ -224,12 +191,12 @@ int video_mod(config cfg)
         window.clear();
         window.draw(sprite);
 
-        if (fps.is_fps_show)
+        if (fps.show)
         {
             sf::Time timer = fps_clock.getElapsedTime();
-            sprintf(fps.fps_line, "%i", ((int)(1. / timer.asSeconds())) % 1000);
-            fps.text_fps.setString(fps.fps_line);
-            window.draw(fps.text_fps);
+            sprintf(fps.line, "%i", ((int)(1. / timer.asSeconds())) % 1000);
+            fps.text.setString(fps.line);
+            window.draw(fps.text);
         }
         fps_clock.restart();
         
@@ -293,4 +260,3 @@ int main(int argc, char* argv[])
         video_mod(cfg);
 }
 //===================================================================================
-

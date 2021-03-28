@@ -217,4 +217,3 @@ inline int get_mask(const _vector_d &cmp)
     return _mm256_movemask_pd(cmp);
 }
 //===================================================================================
-

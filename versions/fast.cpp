@@ -95,12 +95,6 @@ inline void fill_screen(sf::Uint32 screen[window_height][window_width], double g
 
         for (int x_window = 0; x_window < window_width; x_window += 8, x0 += 8 * graph_dot)
         {
-            if (is_kard(x0, y0, graph_dot))
-            {
-                for (int i = 0; i < 8; i++)
-                    screen[y_window][x_window + i] = __builtin_bswap32(sf::Color::Black.toInteger());
-                continue;
-            }
 
             __m256i n = get_n(_mm256_add_ps(_mm256_set1_ps(x0),_mm256_mul_ps(_mm256_set1_ps(graph_dot), zero_to_three)),
                               _mm256_set1_ps(y0), 
@@ -132,7 +126,7 @@ int video_mod()
 
     sf::Uint32 screen[window_height][window_width] = {0};
 
-    int n_max = 100;
+    int n_max = 256;
 
     double graph_dot = 0.001,
            r_max2_d  = 4;

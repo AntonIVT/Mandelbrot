@@ -15,18 +15,17 @@ void set_text_preferences(sf::Text &text)
 
 struct fps_control
 {
-    sf::Text text_fps;
-    bool is_fps_show;
-    bool is_fps_pressed;
-    sf::Time when_fps_pressed;
-    char fps_line[10];
+    sf::Text text;
+    bool show;
+    bool pressed;
+    char line[10];
 };
 //===================================================================================
 
 void get_fps_control(fps_control *fps)
 {
-    set_text_preferences(fps->text_fps);
-    fps->is_fps_show = false;
-    fps->is_fps_pressed = false;
+    set_text_preferences(fps->text);
+    fps->show = false;
+    fps->pressed = false;
 }
 //===================================================================================

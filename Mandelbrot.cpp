@@ -37,7 +37,7 @@ inline sf::Color get_color(long long n, const int colwidth, const int coloffset)
 }
 //===================================================================================
 
-inline __m256i get_n(__m256d x0, __m256d y0, int n_max, __m256d r_max2)
+inline __m256i get_n(__m256d x0, __m256d y0, int n_max, __m256d r_max2, __m256i _129, __m256i one)
 {
     __m256d y_curr = y0;
     __m256d x_curr = x0;
@@ -46,46 +46,29 @@ inline __m256i get_n(__m256d x0, __m256d y0, int n_max, __m256d r_max2)
 
     for (int n = 0; n < n_max; n++)
     {
-        __m256d x2 = _mm256_mul_pd(x_curr, x_curr);
-        __m256d y2 = _mm256_mul_pd(y_curr, y_curr);
-        __m256d r2 = _mm256_add_pd(x2, y2);
-
+        __m256d x2 = x_curr * x_curr;
+        __m256d y2 = y_curr * y_curr;
+        __m256d r2 = x2 + y2;
+        
         __m256d cmp = _mm256_cmp_pd(r2, r_max2, _CMP_LT_OQ); // r2[i] < r_max2[i]
         int mask = _mm256_movemask_pd(cmp);
+        
         if (!mask) // if all 0
             break;
 
-        n_vec = _mm256_sub_epi64(n_vec, _mm256_castpd_si256(cmp));
+        n_vec = n_vec - _mm256_castpd_si256(cmp);
 
-        __m256d xy = _mm256_mul_pd(x_curr, y_curr);
-        x_curr = _mm256_add_pd(x0, _mm256_sub_pd(x2, y2));
-        y_curr = _mm256_add_pd(y0, _mm256_add_pd(xy, xy));
+        __m256d xy = x_curr * y_curr;
+        x_curr = x0 + x2 - y2;
+        y_curr = y0 + xy + xy;
     }
     
     return n_vec;
 }
 //===================================================================================
 
-inline bool is_kard(double x, double y, double graph_dot)
-{
-    double po   = 0;
-    double poc  = 0;
-    bool   flag = true;
-
-    for (int i = 0; i < 4; i++)
-    {
-        po = sqrt(pow(graph_dot*i + x -1./4, 2) + pow(y, 2));
-        poc = 1./2 - 1./2*cos(atan2(y, graph_dot * i + x - 1./4));
-
-        if (po > poc)
-            flag = false;
-    }
-    return flag;
-}
-//===================================================================================
-
-inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
-                        __m256d zero_to_three, int n_max, __m256d r_max2, config cfg)
+void fill_screen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
+                        __m256d zero_to_three, int n_max, __m256d r_max2, __m256i _129, __m256i one, config cfg)
 {
     for (int y_window = 0; y_window < window_height; y_window++)
     {
@@ -94,17 +77,8 @@ inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width,
 
         for (int x_window = 0; x_window < window_width; x_window += 4, x0 += 4 * graph_dot)
         {
-            if (is_kard(x0, y0, graph_dot))
-            {
-                for (int i = 0; i < 4; i++)
-                    screen[y_window * window_width + x_window + i] = __builtin_bswap32(sf::Color::Black.toInteger());
-                continue;
-            }
-
-            __m256i n = get_n(_mm256_add_pd(_mm256_set1_pd(x0),_mm256_mul_pd(_mm256_set1_pd(graph_dot), zero_to_three)),
-                              _mm256_set1_pd(y0), 
-                              n_max, 
-                              r_max2);
+            __m256i n = get_n(_mm256_set1_pd(x0) + _mm256_set1_pd(graph_dot) * zero_to_three,
+                              _mm256_set1_pd(y0), n_max, r_max2, _129, one);
             
             long long *n_ptr = (long long*)&n;
             for (int i = 0; i < 4; i++)
@@ -126,10 +100,9 @@ int video_mod(config cfg)
     sf::Font font;
     assert(font.loadFromFile("src/arial.ttf"));
     get_fps_control(&fps);
-    fps.text_fps.setFont(font);
+    fps.text.setFont(font);
 
-    sf::Time when_load_pressed;
-    bool is_load_pressed = false;
+    bool is_load = false;
 
     int window_width  = cfg.window_width - (cfg.window_width % 4),
         window_height = cfg.window_height;
@@ -152,63 +125,57 @@ int video_mod(config cfg)
 
     __m256d r_max2 = _mm256_set1_pd(r_max2_d);
     __m256d zero_to_three = _mm256_set_pd(0., 1., 2., 3.);
+    __m256i one  = _mm256_set1_epi64x(1);
+    __m256i _129 = _mm256_set1_epi64x(129);
 
     sf::Clock fps_clock;
-    sf::Clock key_clock;
+
+    bool isF = false;
+    bool isL = false;
 
     while (window.isOpen())
     {
         //------------------------------------------------------
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            x_offset -= graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            x_offset += graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            y_offset -= graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            y_offset += graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt)) // Zoom-
-            graph_dot *= 1.1;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))    // Zoom+
-            graph_dot /= 1.1;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
-        {
-            free(screen);
-            return 0;
-        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))     
+            break;
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))  x_offset  -= graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) x_offset  += graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))    y_offset  -= graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))  y_offset  += graph_dot * 25.f;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))  graph_dot *= 1.1;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))     graph_dot /= 1.1;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
         {
-            fps.when_fps_pressed = key_clock.getElapsedTime();
-            if (fps.when_fps_pressed.asSeconds() > 0.05 && fps.when_fps_pressed.asSeconds() < 0.25)
-                fps.is_fps_pressed = true;
+            if (!isF)
+                fps.pressed = true; // is_pressed
+            isF = true;
         }
+        else isF = false;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::L))
         {
-            when_load_pressed = key_clock.getElapsedTime();
-            if (when_load_pressed.asSeconds() > 0.05 && when_load_pressed.asSeconds() < 0.25)
-                is_load_pressed = true;
+            if (!isL)
+                is_load = true;
+            isL = true;
         }
+        else isL = false;
         //------------------------------------------------------
-    
-        sf::Time one_sec = key_clock.getElapsedTime();
-        if (one_sec.asSeconds() >= 0.3)
+
+        if (!isF && fps.pressed)
         {
-            if (fps.is_fps_pressed)
-            {
-                fps.is_fps_show = !fps.is_fps_show;
-                fps.is_fps_pressed = false;
-            }
+            fps.show = !fps.show;
+            fps.pressed = false;
+        }
 
-            if (is_load_pressed)
-            {
-                is_load_pressed = false;
-                if (load_config(cfg, x_offset, y_offset, graph_dot) == 0)
-                    printf("SUCCESSFUL LOAD\n");
-                else
-                    printf("UNSUCCESSFUL LOAD\n");
-            }
-
-            key_clock.restart();
+        if (!isL && is_load)
+        {
+            is_load = false;
+            if (load_config(cfg, x_offset, y_offset, graph_dot) == 0)
+                printf("SUCCESSFUL LOAD\n");
+            else
+                printf("UNSUCCESSFUL LOAD\n");
         }
         //------------------------------------------------------
 
@@ -220,19 +187,19 @@ int video_mod(config cfg)
         }
         //------------------------------------------------------
         
-        fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
+        fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, _129, one, cfg);
 
         texture.update((sf::Uint8 *)screen);
         sprite.setTexture(texture);
         window.clear();
         window.draw(sprite);
 
-        if (fps.is_fps_show)
+        if (fps.show)
         {
             sf::Time timer = fps_clock.getElapsedTime();
-            sprintf(fps.fps_line, "%i", ((int)(1. / timer.asSeconds())) % 1000);
-            fps.text_fps.setString(fps.fps_line);
-            window.draw(fps.text_fps);
+            sprintf(fps.line, "%i", ((int)(1. / timer.asSeconds())) % 1000);
+            fps.text.setString(fps.line);
+            window.draw(fps.text);
         }
         fps_clock.restart();
         
@@ -265,8 +232,10 @@ int screen_mod(config cfg, const char *screen_name)
 
     __m256d r_max2 = _mm256_set1_pd(r_max2_d);
     __m256d zero_to_three = _mm256_set_pd(0., 1., 2., 3.);
+     __m256i one  = _mm256_set1_epi64x(1);
+    __m256i _129 = _mm256_set1_epi64x(129);
 
-    fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
+    fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, _129, one, cfg);
 
     image.create(window_width, window_height, (sf::Uint8*)screen);
     image.saveToFile(screen_name);
