@@ -1,7 +1,7 @@
-all: Mandelbrot
+all: main
 
-Mandelbrot:
-	g++ -o Mandelbrot Mandelbrot.cpp -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -O3
+clean:
+	g++ -o Mandelbrot clean.cpp -lsfml-graphics -lsfml-window -lsfml-system -fopenmp -mavx2 -O3
 	
-main:
-	g++ -o Mandelbrot main.cpp -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -O3
+main:	
+	g++ -o Mandelbrot main.cpp -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -fopenmp -O3

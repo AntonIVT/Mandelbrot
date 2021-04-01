@@ -1,12 +1,12 @@
 #include <cmath>
 #include <cassert>
-#include "src/avx.hpp"
 #include "src/config.hpp"
 #include "src/fps_control.hpp"
+#include <immintrin.h>
 
 //===================================================================================
 
-inline sf::Color get_color(int n, const int colwidth, const int coloffset)
+inline sf::Color get_color(long long n, const int colwidth, const int coloffset)
 {
     sf::Color color;
     n = (n + coloffset) % (3 * colwidth);
@@ -37,28 +37,28 @@ inline sf::Color get_color(int n, const int colwidth, const int coloffset)
 }
 //===================================================================================
 
-inline _vector_ll get_n(_vector_d x0, _vector_d y0, int n_max, _vector_d r_max2)
+inline __m256i get_n(__m256d x0, __m256d y0, int n_max, __m256d r_max2, __m256i _129, __m256i one)
 {
-    _vector_d y_curr = y0;
-    _vector_d x_curr = x0;
+    __m256d y_curr = y0;
+    __m256d x_curr = x0;
 
-    _vector_ll n_vec = 0;
+    __m256i n_vec = _mm256_setzero_si256();
 
     for (int n = 0; n < n_max; n++)
     {
-        _vector_d x2 = x_curr * x_curr;
-        _vector_d y2 = y_curr * y_curr;
-        _vector_d r2 = x2 + y2;
-
-        _vector_d cmp = get_cmp<_CMP_LT_OQ>(r2, r_max2); // r2[i] < r_max2[i]
-        int mask = get_mask(cmp);
+        __m256d x2 = x_curr * x_curr;
+        __m256d y2 = y_curr * y_curr;
+        __m256d r2 = x2 + y2;
         
-        if (!mask)
+        __m256d cmp = _mm256_cmp_pd(r2, r_max2, _CMP_LT_OQ); // r2[i] < r_max2[i]
+        int mask = _mm256_movemask_pd(cmp);
+        
+        if (!mask) // if all 0
             break;
 
-        n_vec = n_vec - cmp;
+        n_vec = n_vec - _mm256_castpd_si256(cmp);
 
-        _vector_d xy = x_curr * y_curr;
+        __m256d xy = x_curr * y_curr;
         x_curr = x0 + x2 - y2;
         y_curr = y0 + xy + xy;
     }
@@ -67,8 +67,8 @@ inline _vector_ll get_n(_vector_d x0, _vector_d y0, int n_max, _vector_d r_max2)
 }
 //===================================================================================
 
-inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
-                        _vector_d zero_to_three, int n_max, _vector_d r_max2, config cfg)
+void fill_screen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
+                        __m256d zero_to_three, int n_max, __m256d r_max2, __m256i _129, __m256i one, config cfg)
 {
     #pragma omp parallel for num_threads(16)
     for (int y_window = 0; y_window < window_height; y_window++)
@@ -78,15 +78,17 @@ inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width,
 
         for (int x_window = 0; x_window < window_width; x_window += 4, x0 += 4 * graph_dot)
         {
-            _vector_ll n = get_n(x0 + graph_dot * zero_to_three, y0, n_max, r_max2);
-
+            __m256i n = get_n(_mm256_set1_pd(x0) + _mm256_set1_pd(graph_dot) * zero_to_three,
+                              _mm256_set1_pd(y0), n_max, r_max2, _129, one);
+            
+            long long *n_ptr = (long long*)&n;
             for (int i = 0; i < 4; i++)
             {
                 sf::Color color = sf::Color::Black;
-                if (n[i] < n_max)
-                    color = get_color(n[i], cfg.color_width, cfg.color_offset);
+                if (n_ptr[i] < n_max)
+                    color = get_color(n_ptr[i], cfg.color_width, cfg.color_offset);
 
-                screen[y_window * window_width + x_window + i] = __builtin_bswap32(color.toInteger());
+                screen[y_window * window_width + x_window + 3 - i] = __builtin_bswap32(color.toInteger());
             }
         }
     }
@@ -103,7 +105,7 @@ int video_mod(config cfg)
 
     bool is_load = false;
 
-    int window_width  = cfg.window_width,
+    int window_width  = cfg.window_width - (cfg.window_width % 4),
         window_height = cfg.window_height;
 
     sf::RenderWindow window(sf::VideoMode(window_width, window_height), "Mandelbrot");
@@ -114,7 +116,6 @@ int video_mod(config cfg)
     texture.create(window_width, window_height);
 
     sf::Uint32 *screen = (sf::Uint32 *)calloc(window_height * window_width, sizeof(sf::Uint32));
-
     int n_max = cfg.n_max;
 
     double graph_dot = cfg.graph_scale,
@@ -123,8 +124,10 @@ int video_mod(config cfg)
     double x_offset = cfg.x_offset,
            y_offset = cfg.y_offset;
 
-    _vector_d r_max2(r_max2_d);
-    _vector_d zero_to_three(0., 1., 2., 3.);
+    __m256d r_max2 = _mm256_set1_pd(r_max2_d);
+    __m256d zero_to_three = _mm256_set_pd(0., 1., 2., 3.);
+    __m256i one  = _mm256_set1_epi64x(1);
+    __m256i _129 = _mm256_set1_epi64x(129);
 
     sf::Clock fps_clock;
 
@@ -185,7 +188,7 @@ int video_mod(config cfg)
         }
         //------------------------------------------------------
         
-        fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
+        fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, _129, one, cfg);
 
         texture.update((sf::Uint8 *)screen);
         sprite.setTexture(texture);
@@ -228,10 +231,12 @@ int screen_mod(config cfg, const char *screen_name)
     double x_offset = cfg.x_offset,
            y_offset = cfg.y_offset;
 
-    _vector_d r_max2(r_max2_d);
-    _vector_d zero_to_three(0., 1., 2., 3.);
+    __m256d r_max2 = _mm256_set1_pd(r_max2_d);
+    __m256d zero_to_three = _mm256_set_pd(0., 1., 2., 3.);
+     __m256i one  = _mm256_set1_epi64x(1);
+    __m256i _129 = _mm256_set1_epi64x(129);
 
-    fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
+    fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, _129, one, cfg);
 
     image.create(window_width, window_height, (sf::Uint8*)screen);
     image.saveToFile(screen_name);
@@ -244,9 +249,6 @@ int screen_mod(config cfg, const char *screen_name)
 
 int main(int argc, char* argv[])
 {
-    const int screen_width  = 1920,
-              screen_height = 1080;
-
     config cfg = get_config();
 
     if (argc > 1 && !strcmp(argv[1], "screen"))
@@ -261,3 +263,4 @@ int main(int argc, char* argv[])
         video_mod(cfg);
 }
 //===================================================================================
+
