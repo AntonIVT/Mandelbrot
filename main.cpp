@@ -70,6 +70,7 @@ inline _vector_ll get_n(_vector_d x0, _vector_d y0, int n_max, _vector_d r_max2)
 inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
                         _vector_d zero_to_three, int n_max, _vector_d r_max2, config cfg)
 {
+    #pragma omp parallel for num_threads(16)
     for (int y_window = 0; y_window < window_height; y_window++)
     {
         double x0 = (-window_width / 2) * graph_dot + x_offset,
@@ -140,8 +141,8 @@ int video_mod(config cfg)
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) x_offset  += graph_dot * 25.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))    y_offset  -= graph_dot * 25.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))  y_offset  += graph_dot * 25.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))  graph_dot *= 1.1;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))     graph_dot /= 1.1;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))  graph_dot *= 1.05;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))     graph_dot /= 1.05;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
         {
