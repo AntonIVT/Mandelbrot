@@ -53,6 +53,9 @@ This is how I used this program in total:
 4. Launch screen-mode
 5. Done 
 
+![Example of pattern](https://github.com/amanakin/Mandelbrot/blob/main/images/Egg.jpg)
+
+
 In file ```custom_configes.cfg``` you can find some configes for nice patterns.
 In folder images you can find images of this patterns.
 
