@@ -1,5 +1,5 @@
 # Mandelbrot
-### This project made for realisation of mandelbrot set.
+### This project made for visualization of mandelbrot set.
 
 ## Usage
 Project supported on Linux only.  
