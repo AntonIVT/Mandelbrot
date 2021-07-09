@@ -1,7 +1,11 @@
-all: main
+SFML   = -lsfml-graphics -lsfml-window -lsfml-system
+DEBUG  = -g  -fsanitize=address -fsanitize=alignment -fsanitize=bool -fsanitize=bounds -fsanitize=enum -fsanitize=float-cast-overflow -fsanitize=float-divide-by-zero -fsanitize=integer-divide-by-zero -fsanitize=leak -fsanitize=nonnull-attribute -fsanitize=null -fsanitize=object-size -fsanitize=return -fsanitize=returns-nonnull-attribute -fsanitize=shift -fsanitize=signed-integer-overflow -fsanitize=undefined -fsanitize=unreachable -fsanitize=vla-bound -fsanitize=vptr 
 
-clean:
-	g++ -o Mandelbrot clean.cpp -lsfml-graphics -lsfml-window -lsfml-system -fopenmp -mavx2 -O3
+
+all: main
 	
 main:	
-	g++ -o Mandelbrot main.cpp -lsfml-graphics -lsfml-window -lsfml-system -mavx2 -fopenmp -O3
+	g++ -o mandelbrot main.cpp $(SFML) -mavx2 -fopenmp -O3
+
+debug:
+	g++ -o mandelbrot_debug $(DEBUG) main.cpp $(SFML) -mavx2 -fopenmp -O3

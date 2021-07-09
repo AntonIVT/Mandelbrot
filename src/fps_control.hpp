@@ -13,7 +13,7 @@ void set_text_preferences(sf::Text &text)
 }
 //===================================================================================
 
-struct fps_control
+struct FpsManager
 {
     sf::Text text;
     bool show;
@@ -22,7 +22,7 @@ struct fps_control
 };
 //===================================================================================
 
-void get_fps_control(fps_control *fps)
+void FpsManagerSetup(FpsManager *fps)
 {
     set_text_preferences(fps->text);
     fps->show = false;

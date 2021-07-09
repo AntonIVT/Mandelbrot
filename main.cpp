@@ -4,8 +4,7 @@
 #include "src/config.hpp"
 #include "src/fps_control.hpp"
 
-//===================================================================================
-
+/* Get color by number of iterations and pattern (colwidth and coloffset) */
 inline sf::Color get_color(int n, const int colwidth, const int coloffset)
 {
     sf::Color color;
@@ -35,8 +34,8 @@ inline sf::Color get_color(int n, const int colwidth, const int coloffset)
 
     return color;
 }
-//===================================================================================
 
+/* Get number of iterations by position (x0, y0) */
 inline _vector_ll get_n(_vector_d x0, _vector_d y0, int n_max, _vector_d r_max2)
 {
     _vector_d y_curr = y0;
@@ -65,10 +64,10 @@ inline _vector_ll get_n(_vector_d x0, _vector_d y0, int n_max, _vector_d r_max2)
     
     return n_vec;
 }
-//===================================================================================
 
-inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
-                        _vector_d zero_to_three, int n_max, _vector_d r_max2, config cfg)
+//===================================================================================
+inline void FillScreen(sf::Uint32 *screen, int window_height, int window_width, double graph_dot, double x_offset, double y_offset, 
+                        _vector_d zero_to_three, int n_max, _vector_d r_max2, Config cfg)
 {
     #pragma omp parallel for num_threads(16)
     for (int y_window = 0; y_window < window_height; y_window++)
@@ -91,14 +90,14 @@ inline void fill_screen(sf::Uint32 *screen, int window_height, int window_width,
         }
     }
 }
-//===================================================================================
 
-int video_mod(config cfg)
+//===================================================================================
+int VideoMod(Config cfg)
 {
-    fps_control fps;
+    FpsManager fps;
     sf::Font font;
     assert(font.loadFromFile("src/arial.ttf"));
-    get_fps_control(&fps);
+    FpsManagerSetup(&fps);
     fps.text.setFont(font);
 
     bool is_load = false;
@@ -170,7 +169,7 @@ int video_mod(config cfg)
         if (!isL && is_load)
         {
             is_load = false;
-            if (load_config(cfg, x_offset, y_offset, graph_dot) == 0)
+            if (LoadConfig(cfg, x_offset, y_offset, graph_dot) == 0)
                 printf("SUCCESSFUL LOAD\n");
             else
                 printf("UNSUCCESSFUL LOAD\n");
@@ -185,7 +184,7 @@ int video_mod(config cfg)
         }
         //------------------------------------------------------
         
-        fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
+        FillScreen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
 
         texture.update((sf::Uint8 *)screen);
         sprite.setTexture(texture);
@@ -209,9 +208,9 @@ int video_mod(config cfg)
     
     return 0;
 }
-//===================================================================================
 
-int screen_mod(config cfg, const char *screen_name)
+//===================================================================================
+int ScreenMod(Config cfg, const char *screen_name)
 {
     int window_width = cfg.window_width,
         window_height = cfg.window_height;
@@ -231,7 +230,7 @@ int screen_mod(config cfg, const char *screen_name)
     _vector_d r_max2(r_max2_d);
     _vector_d zero_to_three(0., 1., 2., 3.);
 
-    fill_screen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
+    FillScreen(screen, window_height, window_width, graph_dot, x_offset, y_offset, zero_to_three, n_max, r_max2, cfg);
 
     image.create(window_width, window_height, (sf::Uint8*)screen);
     image.saveToFile(screen_name);
@@ -240,14 +239,14 @@ int screen_mod(config cfg, const char *screen_name)
 
     return 0;
 }
-//===================================================================================
 
+//===================================================================================
 int main(int argc, char* argv[])
 {
     const int screen_width  = 1920,
               screen_height = 1080;
 
-    config cfg = get_config();
+    Config cfg = GetConfig();
 
     if (argc > 1 && !strcmp(argv[1], "screen"))
     {
@@ -255,9 +254,8 @@ int main(int argc, char* argv[])
         if (argc > 2)
             screen_name = argv[2];
 
-        screen_mod(cfg, screen_name);
+        ScreenMod(cfg, screen_name);
     }
     else
-        video_mod(cfg);
+        VideoMod(cfg);
 }
-//===================================================================================

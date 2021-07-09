@@ -7,7 +7,7 @@
 
 //===================================================================================
 
-struct config
+struct Config
 {
     int window_width;
     int window_height;
@@ -25,7 +25,7 @@ struct config
 };
 //===================================================================================
 
-int get_file_size(FILE *file)
+int FileSize(FILE *file)
 {
     assert(file != NULL);
 
@@ -39,9 +39,9 @@ int get_file_size(FILE *file)
 }
 //===================================================================================
 
-config get_config()
+Config GetConfig()
 {
-    config std_config =    {800, 450, // window parametres
+    Config std_config =    {800, 450, // window parametres
                             27, 81,   // color parametres
                             256,      // n max
                             40.,      // r max ^ 2
@@ -54,7 +54,7 @@ config get_config()
     if (cfg_file == NULL)
         return std_config;
     
-    int cfg_size = get_file_size(cfg_file);
+    int cfg_size = FileSize(cfg_file);
     char* cfg = (char *)calloc(cfg_size + 1, sizeof(char));
 
     fread(cfg, sizeof(char), cfg_size, cfg_file);   
@@ -104,7 +104,7 @@ config get_config()
 }
 //===================================================================================
 
-int get_line(char *buffer, size_t size)
+int GetLine(char *buffer, size_t size)
 {
     size_t cnt = 0;
     int    ch  = 0;
@@ -132,7 +132,7 @@ int get_line(char *buffer, size_t size)
 const size_t MAX_CFG_SIZE = 1000;
 const size_t MAX_CFG_NAME_SIZE = 100;
 
-int load_config(config cfg, double x_offset, double y_offset, double graph_dot)
+int LoadConfig(Config cfg, double x_offset, double y_offset, double graph_dot)
 {
     FILE* cfg_file = fopen("custom_configes.cfg", "ab");
     if (cfg_file == NULL) return -1;
@@ -142,7 +142,7 @@ int load_config(config cfg, double x_offset, double y_offset, double graph_dot)
     char new_cfg_name[MAX_CFG_NAME_SIZE + 1] = {0};
 
     printf("Please, print new config name:\n");
-    get_line(new_cfg_name, MAX_CFG_NAME_SIZE + 1);
+    GetLine(new_cfg_name, MAX_CFG_NAME_SIZE + 1);
     offset += sprintf(new_cfg, "/=================================================\\\n"
                               "=|%s|=\n", new_cfg_name);
     
