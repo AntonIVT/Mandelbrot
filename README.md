@@ -6,7 +6,7 @@ Project supported on Linux only.
 Mandelbrot requires SFML graphics library and AVX2 technology.  
 To start clone repository and make project: ``` > make main```  
 Now you are ready to use program.  
-An important part of the program is the ability to use configs for "places" in Mandelbrot set.
+An important part of the program is the ability to use configs for patterns in Mandelbrot set.
 
 ### Config
 You can make ```config.cfg``` file and add coordinates, scale, screen resolution and quality of set.  
