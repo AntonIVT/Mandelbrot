@@ -3,11 +3,14 @@
 
 ## Installing
 Project supported on Linux only.  
-Mandelbrot requires SFML graphics library and AVX2 technology.  
+Mandelbrot requires SFML graphics library, AVX2 technology and OpenMP.  
 To start clone repository and make project: ``` > make main```  
 
 ## Features
-* Фичи 
+* 2 modes: video-mode for viewing set in high FPS and screen-mode for making images of set in high quality.
+* To speed up used parallel programming(OpenMP) and AVX.
+* The ability to create configs to save the patterns of the set.
+* The ability to control FPS.
 
 ## Usage
 ### Config
@@ -31,10 +34,12 @@ Config settings:
 * MAX_ITERATIONS and MAX_RADIUS^2 are used for quality of set.  
 * OFFSET_X and OFFSET_Y show center of set.  
 ### Program launch
+* ```> ./mandelbrot``` launch video-mode with parameters:
+* ```> ./mandelbrot screen``` launch screen-mode which makes one image with parameters from ```config.cfg``` and saves it.  
+
 
 ### Video-mode Controlling
 
-```./mandelbrot``` launch video-mode with parameters:
 * **E**     - exit the program
 * **LAlt**  - zoom out
 * **X**     - zoom in
@@ -44,8 +49,6 @@ Config settings:
 * **Down**  - move down
 * **F**     - enable/disable FPS
 * **L**     - load this position and make new config (save to ```custom_configes.cfg```)
-
-```./mandelbrot screen``` launch screen-mode which makes one image with parameters from ```config.cfg``` and saves it.  
 
 ### Example
 
@@ -57,7 +60,6 @@ This is how I used this program in total:
 5. Done 
 
 ![Example of pattern](https://github.com/amanakin/Mandelbrot/blob/main/images/Egg.jpg)
-
 
 In file ```custom_configes.cfg``` you can find some configes for nice patterns.
 In folder images you can find images of this patterns.
