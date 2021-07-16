@@ -47,7 +47,7 @@ Config settings:
 
 ```./mandelbrot screen``` launch screen-mode which makes one image with parameters from ```config.cfg``` and saves it.  
 
-## PS
+### Example
 
 This is how I used this program in total: 
 1. Find nice pattern with standard config in video-mode
