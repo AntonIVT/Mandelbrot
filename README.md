@@ -1,13 +1,15 @@
 # Mandelbrot
 ### This project made for visualization of mandelbrot set.
 
-## Usage
+## Installing
 Project supported on Linux only.  
 Mandelbrot requires SFML graphics library and AVX2 technology.  
 To start clone repository and make project: ``` > make main```  
-Now you are ready to use program.  
-An important part of the program is the ability to use configs for patterns in Mandelbrot set.
 
+## Features
+* Фичи 
+
+## Usage
 ### Config
 You can make ```config.cfg``` file and add coordinates, scale, screen resolution and quality of set.  
 Here is example of standard setup:
@@ -28,8 +30,9 @@ Config settings:
 * COLOR_WIDTH and COLOR_OFFSET are used for colorization.  
 * MAX_ITERATIONS and MAX_RADIUS^2 are used for quality of set.  
 * OFFSET_X and OFFSET_Y show center of set.  
+### Program launch
 
-## Features
+### Video-mode Controlling
 
 ```./mandelbrot``` launch video-mode with parameters:
 * **E**     - exit the program
